@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>🎥 Django Video Player</title>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            background: black;
+            overflow: hidden;
+        }
+
+        video {
+            width: 100vw;
+            height: 100vh;
+            object-fit: cover;
+            background: black;
+        }
+
+        h2, p {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+<video id="player" controls>
+    <source id="videoSource" src="" type="video/mp4">
+    Ваш браузер не поддерживает видео.
+</video>
+
+<script>
+    const player = document.getElementById("player");
+    const videoSource = document.getElementById("videoSource");
+
+    // Подключаемся к SSE серверу
+    const evtSource = new EventSource("http://192.168.19.13:8000/sse/host?param=DJANGO");
+
+    // --- событие воспроизведения ---
+    evtSource.addEventListener("play", (event) => {
+        console.log(event.data)
+        const payload = JSON.parse(event.data);
+        const url = payload.urls[0].url;
+        videoSource.src = url;
+        player.load();
+        player.play();
+    });
+
+    evtSource.addEventListener("pause", () => player.pause());
+    evtSource.addEventListener("setvol", (event) => {
+        const payload = JSON.parse(event.data);
+        player.volume = payload.volume;
+    });
+    evtSource.addEventListener("stop", () => {
+        player.pause();
+        player.currentTime = 0;
+    });
+    evtSource.addEventListener("replay", () => {
+        player.currentTime = 0;
+        player.play();
+    });
+</script>
+</body>
+</html>
