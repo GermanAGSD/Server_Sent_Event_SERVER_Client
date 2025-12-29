@@ -17,6 +17,7 @@ from fastapi.security import OAuth2PasswordBearer
 from fastapi.middleware.cors import CORSMiddleware
 from faststream.rabbit.fastapi import RabbitRouter
 
+
 router = RabbitRouter("amqp://admin:admin123@172.30.30.19:5672/")
 
 app = FastAPI(lifespan=router.lifespan_context)
@@ -31,7 +32,7 @@ origins = [
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -229,14 +230,24 @@ async def post_to_server(url, data):
         print(f"POST response: {response.status_code}, {response.text}")
 
 
+
+async def push_sse(host: str, data, event: str) -> int:
+    sent = 0
+    for stream in list(_streams):
+        if stream.query_params == host and stream.active:
+            await stream.asend(ServerSentEvent(data=str(data), event=event))
+            sent += 1
+    return sent
+
 # http://192.168.3.2:8000/webhook?param=browser
 @app.post("/webhook")
 async def webhook_handler(data: WebhookData, request: Request):
     param = request.query_params.get("param")  # "browser"
     print(param)
+    await send_message(param, data="Автоматика работает", event="message")
     try:
         data_json = {
-            "id": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "id": param,
             "event": data.event,
             "message": data.data
         }
@@ -256,7 +267,7 @@ async def webhook_handler(data: WebhookData, request: Request):
 
 
 @app.post("/message", status_code=status.HTTP_200_OK)
-async def send_message(host: str,data: str, event: str, stream: Stream = Depends()) -> None:
+async def send_message(host: str, data: str, event: str, stream: Stream = Depends()) -> None:
     for stream in _streams:
         if stream.query_params == host:
             await stream.asend(
