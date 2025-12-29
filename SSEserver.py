@@ -162,22 +162,7 @@ class Stream:
         """Закрыть поток (например, при отключении клиента)"""
         self.active = False
 
-# class Stream:
-#     def __init__(self) -> None:
-#         self._queue = asyncio.Queue[ServerSentEvent]()
-#
-#     def __aiter__(self) -> "Stream":
-#         return self
-#
-#     async def __anext__(self) -> ServerSentEvent:
-#         return await self._queue.get()
-#
-#     async def asend(self, value: ServerSentEvent) -> None:
-#         await self._queue.put(value)
-#
-# _streams: List[Stream] = []
-
-# http://192.168.3.2:8000/sse/host?param=sqlrk
+# http://192.168.3.2:8000/sse/host?param=browser
 @app.get("/sse/host")
 async def sse(request: Request, db: Session = Depends(get_db)) -> EventSourceResponse:
     # создаём и регистрируем поток клиента
@@ -238,64 +223,20 @@ def regist_host(parammetr, db: Session):
         db.refresh(new_host)
         print(f"New device registered with param {parammetr}.")
 
-
-# @app.get("/sse/host")
-# async def sse(request: Request, db: Session = Depends(get_db),stream: Stream = Depends()) -> EventSourceResponse:
-#     stream = Stream()
-#     query_params = request.query_params.get('param', 'No params')
-#     stream.client_ip = request.client.host
-#     stream.query_params = query_params
-#     _streams.append(stream)
-#     print(f"Client connected: IP address: {stream.client_ip}, Query params: {stream.query_params}")
-#
-#     # webhook to FrontEnd
-#     # Отправляем POST-запрос о подключении клиента
-#     # await post_to_server(
-#     #     "http://localhost:8000/sse/client-connected",
-#     #     {"client_ip": stream.client_ip, "query_params": stream.query_params},
-#     # )
-#
-#     # Проверка и регистрация хоста в базе данных
-#     regist_host(stream.query_params, db)
-#     async def event_generator():
-#         try:
-#             async for event in stream:
-#                 yield event
-#         except asyncio.CancelledError:
-#             _streams.remove(stream)
-#             print(f"Client disconnected: IP address: {stream.client_ip}, Query params: {stream.query_params}")
-#             raise
-#
-#     return EventSourceResponse(event_generator(), headers={'Cache-Control': 'no-store'})
-#     try:
-#         query_params = request.query_params.get('param', 'No params')
-#         stream.client_ip = request.client.host
-#         stream.query_params = query_params
-#         _streams.append(stream)
-#         print(f"Client connected: IP address: {stream.client_ip}, Query params: {stream.query_params}")
-#         return EventSourceResponse(stream, headers={'Cache-Control': 'no-store'})
-#     except asyncio.CancelledError:
-#         _streams.remove(stream)
-#         print(f"Client disconnected: IP address: {stream.client_ip}, Query params: {stream.query_params}")
-#         raise
-#     query_params = request.query_params.get('param', 'No params')
-#     stream.client_ip = request.client.host
-#     stream.query_params = query_params
-#     _streams.append(stream)
-#     return EventSourceResponse(stream, headers={'Cache-Control': 'no-store'})
-
-# Data to webHook
 async def post_to_server(url, data):
     async with AsyncClient() as client:
         response = await client.post(url, json=data)
         print(f"POST response: {response.status_code}, {response.text}")
 
 
+# http://192.168.3.2:8000/webhook?param=browser
 @app.post("/webhook")
-async def webhook_handler(data: WebhookData):
+async def webhook_handler(data: WebhookData, request: Request):
+    param = request.query_params.get("param")  # "browser"
+    print(param)
     try:
         data_json = {
-            # "id": random.randint(1, 1_000_000),
+            "id": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "event": data.event,
             "message": data.data
         }
