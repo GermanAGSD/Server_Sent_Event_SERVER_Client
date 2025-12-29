@@ -15,9 +15,13 @@ from jose import JWTError, jwt
 from datetime import datetime, timedelta, timezone
 from fastapi.security import OAuth2PasswordBearer
 from fastapi.middleware.cors import CORSMiddleware
+from faststream.rabbit.fastapi import RabbitRouter
 
-app = FastAPI()
+router = RabbitRouter("amqp://admin:admin123@172.30.30.19:5672/")
 
+app = FastAPI(lifespan=router.lifespan_context)
+
+app.include_router(router)
 
 origins = [
     "http://127.0.0.1:8080",
@@ -34,6 +38,8 @@ app.add_middleware(
 )
 
 Models.Base.metadata.create_all(bind=engine)
+
+
 
 class ParamsOut(BaseModel):
     params: str
@@ -288,6 +294,17 @@ async def post_to_server(url, data):
 @app.post("/webhook")
 async def webhook_handler(data: WebhookData):
     try:
+        data_json = {
+            # "id": random.randint(1, 1_000_000),
+            "event": data.event,
+            "message": data.data
+        }
+
+        await router.broker.publish(
+            data_json,
+            queue="orders"
+        )
+
         print(f"Received event: {data.event}")
         print(f"Payload: {data.data}")
         # Обработка данных, например, запись в лог или выполнение действия
