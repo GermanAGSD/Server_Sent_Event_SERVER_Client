@@ -4,8 +4,8 @@ from typing import List, Union, Optional
 import uvicorn
 from pydantic import BaseModel, Field
 from starlette import status
-from Models import Models
-from Database.DataBaseSqlAlchemy import engine, get_db
+from app.Models import Models
+from app.Database.DataBaseSqlAlchemy import engine, get_db
 from sqlalchemy.orm import Session
 import asyncio
 import json
