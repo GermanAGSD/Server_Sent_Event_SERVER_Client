@@ -4,14 +4,14 @@ from typing import List, Union, Optional
 import uvicorn
 from pydantic import BaseModel, Field
 from starlette import status
-from SSE.Models import Models
-from SSE.Database.DataBaseSqlAlchemy import engine, get_db
+from Models import Models
+from Database.DataBaseSqlAlchemy import engine, get_db
 from sqlalchemy.orm import Session
 import asyncio
 import json
 from httpx import AsyncClient
 from passlib.context import CryptContext
-from jose import JWTError, jwt
+from jose import jwt
 from datetime import datetime, timedelta, timezone
 from fastapi.security import OAuth2PasswordBearer
 from fastapi.middleware.cors import CORSMiddleware

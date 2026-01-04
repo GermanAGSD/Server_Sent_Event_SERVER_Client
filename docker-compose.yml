@@ -1,0 +1,13 @@
+version: "3.9"
+
+services:
+  sse-api:
+    build: .
+    container_name: sse_fastapi
+    ports:
+      - "8300:8300"
+    environment:
+      - TZ=Europe/Moscow
+    depends_on:
+      - rabbitmq
+    restart: unless-stopped

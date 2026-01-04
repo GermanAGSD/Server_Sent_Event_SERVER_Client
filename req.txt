@@ -1,0 +1,10 @@
+fastapi
+sse_starlette
+uvicorn
+pydantic
+sqlalchemy
+python-jose[cryptography]
+psycopg2
+httpx
+passlib
+faststream[rabbit]
